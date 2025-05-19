@@ -1,7 +1,5 @@
 # IoT Monitoring Kualitas Air (ESP32)
 
-https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-
 Proyek ini bertujuan untuk memonitor kualitas air secara real-time menggunakan sensor pH, turbidity, dan TDS yang terhubung ke mikrokontroler ESP32 dan mengirimkan data ke platform IoT.
 
 ## Langkah-langkah Instalasi dan Penggunaan
