@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Monitoring</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        .sensor-card {
+            background: #2d2d2d;
+            border-radius: 15px;
+            transition: transform 0.3s;
+        }
+        .sensor-card:hover {
+            transform: translateY(-5px);
+        }
+        .gauge {
+            height: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            background: #333;
+            overflow: hidden;
+            position: relative;
+        }
+        .gauge-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .chart-container {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-5">Water Quality Monitoring</h1>
+        
+        <div class="row g-4">
+            <!-- pH Card -->
+            <div class="col-md-4">
+                <div class="sensor-card p-4">
+                    <h3>pH Level</h3>
+                    <div class="display-4 fw-bold" id="phValue">0.00</div>
+                    <div class="gauge">
+                        <div class="gauge-fill bg-info" id="phGauge"></div>
+                    </div>
+                    <div id="phStatus">Loading...</div>
+                </div>
+            </div>
+
+            <!-- TDS Card -->
+            <div class="col-md-4">
+                <div class="sensor-card p-4">
+                    <h3>TDS</h3>
+                    <div class="display-4 fw-bold" id="tdsValue">0</div>
+                    <div class="text-muted">ppm</div>
+                    <div class="gauge">
+                        <div class="gauge-fill bg-warning" id="tdsGauge"></div>
+                    </div>
+                    <div id="tdsStatus">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Turbidity Card -->
+            <div class="col-md-4">
+                <div class="sensor-card p-4">
+                    <h3>Turbidity</h3>
+                    <div class="display-4 fw-bold" id="turbidityValue">0.00</div>
+                    <div class="text-muted">V</div>
+                    <div class="gauge">
+                        <div class="gauge-fill bg-success" id="turbidityGauge"></div>
+                    </div>
+                    <div id="turbidityStatus">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="chart-container">
+            <canvas id="qualityChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize Chart
+        const ctx = document.getElementById('qualityChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'pH Level',
+                    data: [],
+                    borderColor: '#0dcaf0',
+                    tension: 0.3
+                },
+                {
+                    label: 'TDS (ppm)',
+                    data: [],
+                    borderColor: '#ffc107',
+                    tension: 0.3
+                },
+                {
+                    label: 'Turbidity (V)',
+                    data: [],
+                    borderColor: '#198754',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#444'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: '#444'
+                        },
+                        ticks: {
+                            color: '#fff'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Update data function
+        async function updateData() {
+            try {
+                // Simulate data fetch - Replace with actual API call
+                const response = await fetch('/sensor-data');
+                const data = await response.text();
+                
+                // Parse sensor data (example: "pH: 7.00 | Turbidity Voltage: 2.50 V | TDS: 500 ppm")
+                const ph = parseFloat(data.match(/pH: (\d+\.\d{2})/)[1]);
+                const turbidity = parseFloat(data.match(/Turbidity Voltage: (\d+\.\d{2})/)[1]);
+                const tds = parseInt(data.match(/TDS: (\d+)/)[1]);
+
+                // Update display values
+                document.getElementById('phValue').textContent = ph.toFixed(2);
+                document.getElementById('tdsValue').textContent = tds;
+                document.getElementById('turbidityValue').textContent = turbidity.toFixed(2);
+
+                // Update gauges
+                document.getElementById('phGauge').style.width = `${(ph/14)*100}%`;
+                document.getElementById('tdsGauge').style.width = `${(tds/1000)*100}%`;
+                document.getElementById('turbidityGauge').style.width = `${(turbidity/5)*100}%`;
+
+                // Update status indicators
+                document.getElementById('phStatus').textContent = getPHStatus(ph);
+                document.getElementById('tdsStatus').textContent = getTDSStatus(tds);
+                document.getElementById('turbidityStatus').textContent = getTurbidityStatus(turbidity);
+
+                // Update chart
+                const time = new Date().toLocaleTimeString();
+                chart.data.labels.push(time);
+                chart.data.datasets[0].data.push(ph);
+                chart.data.datasets[1].data.push(tds);
+                chart.data.datasets[2].data.push(turbidity);
+                chart.update();
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Status functions
+        function getPHStatus(ph) {
+            if(ph < 6.5) return 'Acidic ⚠️';
+            if(ph > 8.5) return 'Alkaline ⚠️';
+            return 'Normal ✅';
+        }
+
+        function getTDSStatus(tds) {
+            if(tds > 600) return 'High ⚠️';
+            return 'Normal ✅';
+        }
+
+        function getTurbidityStatus(turbidity) {
+            if(turbidity > 3.0) return 'High Turbidity ⚠️';
+            return 'Normal ✅';
+        }
+
+        // Update data every second
+        setInterval(updateData, 1000);
+        // Initial call
+        updateData();
+    </script>
+</body>
+</html>
