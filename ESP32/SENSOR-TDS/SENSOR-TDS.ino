@@ -1,8 +1,8 @@
 // Original source code: https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0#Test_Code
 // Project details: https://RandomNerdTutorials.com/arduino-tds-water-quality-sensor/
 
-#define TdsSensorPin A0
-#define VREF 5.0              // analog reference voltage(Volt) of the ADC
+#define TdsSensorPin 34        // Gunakan GPIO 34 sebagai pin ADC ESP32
+#define VREF 3.3               // referensi tegangan ADC ESP32 (Volt)
 #define SCOUNT  30            // sum of sample point
 
 int analogBuffer[SCOUNT];     // store the analog value in the array, read from ADC
@@ -47,7 +47,7 @@ void loop(){
   static unsigned long analogSampleTimepoint = millis();
   if(millis()-analogSampleTimepoint > 40U){     //every 40 milliseconds,read the analog value from the ADC
     analogSampleTimepoint = millis();
-    analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin);    //read the analog value and store into the buffer
+    analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin); // 0-4095 untuk ESP32
     analogBufferIndex++;
     if(analogBufferIndex == SCOUNT){ 
       analogBufferIndex = 0;
@@ -59,10 +59,10 @@ void loop(){
     printTimepoint = millis();
     for(copyIndex=0; copyIndex<SCOUNT; copyIndex++){
       analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
-      
-      // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-      averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF / 1024.0;
-      
+
+      // median filter dan konversi ke tegangan
+      averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF / 4095.0; // 4095 untuk ESP32
+
       //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0)); 
       float compensationCoefficient = 1.0+0.02*(temperature-25.0);
       //temperature compensation

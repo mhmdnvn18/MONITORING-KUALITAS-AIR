@@ -1,4 +1,4 @@
-#define SensorPin A0          // the pH meter Analog output is connected with the Arduino’s Analog
+#define SensorPin 34           // Gunakan GPIO 34 sebagai pin ADC ESP32
 unsigned long int avgValue;  //Store the average value of the sensor feedback
 float b;
 int buf[10],temp;
@@ -13,7 +13,7 @@ void loop()
 {
   for(int i=0;i<10;i++)       //Get 10 sample value from the sensor for smooth the value
   { 
-    buf[i]=analogRead(SensorPin);
+    buf[i]=analogRead(SensorPin); // 0-4095 untuk ESP32
     delay(10);
   }
   for(int i=0;i<9;i++)        //sort the analog from small to large
@@ -31,8 +31,8 @@ void loop()
   avgValue=0;
   for(int i=2;i<8;i++)                      //take the average value of 6 center sample
     avgValue+=buf[i];
-  float phValue=(float)avgValue*5.0/1024/6; //convert the analog into millivolt
-  phValue=3.5*phValue;                      //convert the millivolt into pH value
+  float phValue=(float)avgValue*3.3/4095/6; // konversi ke tegangan (0-3.3V)
+  phValue=3.5*phValue;                      // konversi ke nilai pH (kalibrasi bisa disesuaikan)
   Serial.print("    pH:");  
   Serial.print(phValue,2);
   Serial.println(" ");
