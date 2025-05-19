@@ -1,43 +1,43 @@
-#define SensorPin 34           // Gunakan GPIO 34 sebagai pin ADC ESP32
-unsigned long int avgValue;  //Store the average value of the sensor feedback
-float b;
-int buf[10],temp;
- 
+#include "DFRobot_ESP_PH.h"
+#include <EEPROM.h>
+
+DFRobot_ESP_PH ph;
+#define ESPADC 4096.0   //the esp Analog Digital Convertion value
+#define ESPVOLTAGE 3300 //the esp voltage supply value
+#define PH_PIN 35		//the esp gpio data pin number
+float voltage, phValue, temperature = 25;
+
 void setup()
 {
-  pinMode(13,OUTPUT);  
-  Serial.begin(9600);  
-  Serial.println("Ready");    //Test the serial monitor
+	Serial.begin(115200);
+	EEPROM.begin(32);//needed to permit storage of calibration value in eeprom
+	ph.begin();
 }
+
 void loop()
 {
-  for(int i=0;i<10;i++)       //Get 10 sample value from the sensor for smooth the value
-  { 
-    buf[i]=analogRead(SensorPin); // 0-4095 untuk ESP32
-    delay(10);
-  }
-  for(int i=0;i<9;i++)        //sort the analog from small to large
-  {
-    for(int j=i+1;j<10;j++)
-    {
-      if(buf[i]>buf[j])
-      {
-        temp=buf[i];
-        buf[i]=buf[j];
-        buf[j]=temp;
-      }
-    }
-  }
-  avgValue=0;
-  for(int i=2;i<8;i++)                      //take the average value of 6 center sample
-    avgValue+=buf[i];
-  float phValue=(float)avgValue*3.3/4095/6; // konversi ke tegangan (0-3.3V)
-  phValue=3.5*phValue;                      // konversi ke nilai pH (kalibrasi bisa disesuaikan)
-  Serial.print("    pH:");  
-  Serial.print(phValue,2);
-  Serial.println(" ");
-  digitalWrite(13, HIGH);       
-  delay(800);
-  digitalWrite(13, LOW); 
- 
+	static unsigned long timepoint = millis();
+	if (millis() - timepoint > 1000U) //time interval: 1s
+	{
+		timepoint = millis();
+		//voltage = rawPinValue / esp32ADC * esp32Vin
+		voltage = analogRead(PH_PIN) / ESPADC * ESPVOLTAGE; // read the voltage
+		Serial.print("voltage:");
+		Serial.println(voltage, 4);
+		
+		//temperature = readTemperature();  // read your temperature sensor to execute temperature compensation
+		Serial.print("temperature:");
+		Serial.print(temperature, 1);
+		Serial.println("^C");
+
+		phValue = ph.readPH(voltage, temperature); // convert voltage to pH with temperature compensation
+		Serial.print("pH:");
+		Serial.println(phValue, 4);
+	}
+	ph.calibration(voltage, temperature); // calibration process by Serail CMD
+}
+
+float readTemperature()
+{
+	//add your code here to get the temperature from your temperature sensor
 }
