@@ -1,6 +1,6 @@
 # IoT Monitoring Kualitas Air (ESP32)
 
-Proyek ini bertujuan untuk memonitor kualitas air secara real-time menggunakan sensor pH, turbidity, dan TDS yang terhubung ke mikrokontroler ESP32 dan mengirimkan data ke platform IoT.
+Proyek ini bertujuan untuk memonitor kualitas air secara real-time menggunakan sensor pH, turbidity, dan TDS yang terhubung ke mikrokontroler ESP32, serta mengirimkan data ke platform IoT.
 
 ## Langkah-langkah Instalasi dan Penggunaan
 
@@ -41,9 +41,9 @@ Proyek ini bertujuan untuk memonitor kualitas air secara real-time menggunakan s
 - Modifikasi kode untuk mengirim data ke platform IoT seperti ThingSpeak, Blynk, atau MQTT sesuai kebutuhan.
 
 ## Sensor yang Digunakan
-- **Sensor pH**: Untuk mengukur tingkat keasaman air.
-- **Sensor Turbidity**: Untuk mengukur tingkat kekeruhan air.
-- **Sensor TDS**: Untuk mengukur total padatan terlarut dalam air.
+- **Sensor pH**: Mengukur tingkat keasaman air.
+- **Sensor Turbidity**: Mengukur tingkat kekeruhan air.
+- **Sensor TDS**: Mengukur total padatan terlarut dalam air.
 
 ## Contoh Pin ESP32
 - pH Sensor: GPIO 34 (ADC1_CH6)
@@ -88,7 +88,7 @@ Berikut adalah ilustrasi sederhana topologi wiring antara ESP32 dan sensor-senso
 |   (VCC, GND, S)   |         +-------------------+
 +-------------------+
                               Legend:
-+-------------------+         S = Signal pin sensor
++-------------------+         S = pin sinyal sensor
 |                   |
 | Sensor Turbidity  |
 |   (VCC, GND, S)   |
@@ -108,7 +108,14 @@ Berikut adalah ilustrasi sederhana topologi wiring antara ESP32 dan sensor-senso
 > - Pastikan pin sinyal sensor dihubungkan ke pin ADC (analog input) pada ESP32.
 
 ## Referensi
+
+### Sensor pH
 - [Grove PH Sensor Kit](https://wiki.seeedstudio.com/Grove-PH-Sensor-kit/)
 - [PH Sensor E-201-C Datasheet](https://www.e-gizmo.net/oc/kits%20documents/PH%20Sensor%20E-201-C/PH%20Sensor%20E-201-C.pdf)
+- [Forum Arduino: Koneksi PH Sensor ke ESP32](https://forum.arduino.cc/t/trying-to-connect-ph-sensor-to-esp32/1108237)
+
+### Sensor Turbidity
 - [DFRobot Turbidity Sensor](https://wiki.dfrobot.com/Turbidity_sensor_SKU__SEN0189)
+
+### Sensor TDS
 - [Arduino TDS Water Quality Sensor](https://randomnerdtutorials.com/arduino-tds-water-quality-sensor/)
