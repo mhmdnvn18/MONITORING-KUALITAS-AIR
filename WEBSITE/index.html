@@ -258,8 +258,9 @@
         // Fungsi untuk update tabel histori
         async function updateHistoryTable() {
             try {
+                // Ambil semua data dari Supabase, urutkan terbaru di atas
                 const res = await fetch(
-                    `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=ph,tds,turbidity,created_at&order=created_at.desc&limit=10`,
+                    `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=ph,tds,turbidity,created_at&order=created_at.desc`,
                     {
                         headers: {
                             apikey: SUPABASE_API_KEY,
