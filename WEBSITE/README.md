@@ -7,3 +7,5 @@ Website ini menampilkan data kualitas air (pH, TDS, Turbidity) secara realtime d
 1. Push folder ini ke repository GitHub.
 2. Hubungkan repo ke [Vercel](https://vercel.com/import/git).
 3. Deploy sebagai project **Static**.
+
+Dokumentasi sudah jelas untuk penggunaan dan deployment ke Vercel.
