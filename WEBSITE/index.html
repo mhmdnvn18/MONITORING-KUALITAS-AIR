@@ -89,6 +89,27 @@
         <div class="chart-container">
             <canvas id="qualityChart"></canvas>
         </div>
+
+        <!-- History Table Section -->
+        <div class="chart-container mt-4">
+            <h4 class="mb-3">Histori Data Terbaru</h4>
+            <div class="table-responsive">
+                <table class="table table-dark table-striped table-bordered align-middle mb-0" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Waktu</th>
+                            <th scope="col">pH</th>
+                            <th scope="col">TDS (ppm)</th>
+                            <th scope="col">Turbidity (V)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data histori akan diisi oleh JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -223,11 +244,48 @@
 
                 chart.update();
 
+                // Update history table
+                updateHistoryTable();
+
             } catch (error) {
                 document.getElementById('phStatus').textContent = 'Error';
                 document.getElementById('tdsStatus').textContent = 'Error';
                 document.getElementById('turbidityStatus').textContent = 'Error';
                 console.error('Error fetching data:', error);
+            }
+        }
+
+        // Fungsi untuk update tabel histori
+        async function updateHistoryTable() {
+            try {
+                const res = await fetch(
+                    `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=ph,tds,turbidity,created_at&order=created_at.desc&limit=10`,
+                    {
+                        headers: {
+                            apikey: SUPABASE_API_KEY,
+                            Authorization: `Bearer ${SUPABASE_API_KEY}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                if (!res.ok) return;
+                const dataArr = await res.json();
+                const tbody = document.querySelector('#historyTable tbody');
+                tbody.innerHTML = '';
+                dataArr.forEach((row, idx) => {
+                    const waktu = row.created_at ? new Date(row.created_at).toLocaleString() : '-';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${dataArr.length - idx}</td>
+                            <td>${waktu}</td>
+                            <td>${parseFloat(row.ph).toFixed(2)}</td>
+                            <td>${row.tds}</td>
+                            <td>${parseFloat(row.turbidity).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                // Optional: tampilkan error di tabel
             }
         }
 

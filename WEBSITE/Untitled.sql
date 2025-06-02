@@ -17,3 +17,9 @@ CREATE POLICY "Allow read access to all"
     ON water_quality
     FOR SELECT
     USING (true);
+
+-- Allow INSERT for all users (public write)
+CREATE POLICY "Allow insert access to all"
+    ON water_quality
+    FOR INSERT
+    WITH CHECK (true);

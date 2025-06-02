@@ -58,7 +58,7 @@ void loop() {
 
     // === DATA DUMMY ===
     float phValue = 6.5 + (rand() % 300) / 100.0;         // 6.5 - 9.5
-    float tdsValue = 100 + (rand() % 900);                // 100 - 999 ppm
+    int tdsValue = 100 + (rand() % 900);                  // 100 - 999 ppm (integer)
     float turbidityVoltage = 0.5 + (rand() % 400) / 100.0; // 0.5 - 4.5 V
 
     // Kirim data dummy ke Supabase
@@ -67,7 +67,7 @@ void loop() {
     // Tampilkan data dummy ke Serial
     Serial.println("=== Data Sensor (DUMMY) ===");
     Serial.print("TDS Tegangan : "); Serial.print(turbidityVoltage, 3); Serial.println(" V");
-    Serial.print("TDS (ppm)    : "); Serial.println(tdsValue, 0);
+    Serial.print("TDS (ppm)    : "); Serial.println(tdsValue);
     Serial.print("Turbidity Tegangan : "); Serial.print(turbidityVoltage, 3); Serial.println(" V");
     Serial.print("Turbidity (NTU)    : "); Serial.println((turbidityVoltage * 100), 1);
     Serial.print("pH Tegangan : "); Serial.print(phValue * 100, 0); Serial.println(" mV");
@@ -134,7 +134,7 @@ int getMedianNum(int bArray[], int iFilterLen) {
 }
 
 // === Fungsi Kirim Data ke Supabase ===
-void sendToSupabase(float ph, float tds, float turbidity) {
+void sendToSupabase(float ph, int tds, float turbidity) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     String url = String(supabase_url) + "/rest/v1/" + supabase_table;
@@ -146,12 +146,19 @@ void sendToSupabase(float ph, float tds, float turbidity) {
 
     // Format JSON sesuai kolom tabel Supabase Anda
     String payload = "{\"ph\":" + String(ph, 2) +
-                     ",\"tds\":" + String(tds, 0) +
+                     ",\"tds\":" + String(tds) +
                      ",\"turbidity\":" + String(turbidity, 2) + "}";
 
     int httpResponseCode = http.POST(payload);
+    if (httpResponseCode > 0) {
+      Serial.print("Supabase POST: ");
+      Serial.println(httpResponseCode);
+    } else {
+      Serial.print("Supabase POST Error: ");
+      Serial.println(http.errorToString(httpResponseCode));
+    }
     http.end();
-    Serial.print("Supabase POST: ");
-    Serial.println(httpResponseCode);
+  } else {
+    Serial.println("WiFi not connected, cannot send to Supabase.");
   }
 }
