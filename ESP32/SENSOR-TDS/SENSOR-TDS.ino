@@ -1,8 +1,5 @@
-// Original source code: https://wiki.keyestudio.com/KS0429_keyestudio_TDS_Meter_V1.0#Test_Code
-// Project details: https://RandomNerdTutorials.com/arduino-tds-water-quality-sensor/
-
-#define TdsSensorPin 34        // Gunakan GPIO 34 sebagai pin ADC ESP32
-#define VREF 3.3               // referensi tegangan ADC ESP32 (Volt)
+#define TdsSensorPin 34
+#define VREF 3.3              // analog reference voltage(Volt) of the ADC
 #define SCOUNT  30            // sum of sample point
 
 int analogBuffer[SCOUNT];     // store the analog value in the array, read from ADC
@@ -12,7 +9,7 @@ int copyIndex = 0;
 
 float averageVoltage = 0;
 float tdsValue = 0;
-float temperature = 16;       // current temperature for compensation
+float temperature = 25;       // current temperature for compensation
 
 // median filtering algorithm
 int getMedianNum(int bArray[], int iFilterLen){
@@ -47,7 +44,7 @@ void loop(){
   static unsigned long analogSampleTimepoint = millis();
   if(millis()-analogSampleTimepoint > 40U){     //every 40 milliseconds,read the analog value from the ADC
     analogSampleTimepoint = millis();
-    analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin); // 0-4095 untuk ESP32
+    analogBuffer[analogBufferIndex] = analogRead(TdsSensorPin);    //read the analog value and store into the buffer
     analogBufferIndex++;
     if(analogBufferIndex == SCOUNT){ 
       analogBufferIndex = 0;
@@ -59,10 +56,10 @@ void loop(){
     printTimepoint = millis();
     for(copyIndex=0; copyIndex<SCOUNT; copyIndex++){
       analogBufferTemp[copyIndex] = analogBuffer[copyIndex];
-
-      // median filter dan konversi ke tegangan
-      averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF / 4095.0; // 4095 untuk ESP32
-
+      
+      // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+      averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF / 4096.0;
+      
       //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0)); 
       float compensationCoefficient = 1.0+0.02*(temperature-25.0);
       //temperature compensation
