@@ -96,6 +96,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Supabase REST API endpoint
+        const SUPABASE_URL = 'https://jaxoedhomiloedbddcuh.supabase.co';
+        const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpheG9lZGhvbWlsb2VkYmRkY3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NTUyODcsImV4cCI6MjA2NDQzMTI4N30.rv1Ie4wfUaRtz-BIV8AYMocObV_ZZbYoR2VbZxShcIo';
+        const SUPABASE_TABLE = 'water_quality';
+
         // Initialize Chart
         const ctx = document.getElementById('qualityChart').getContext('2d');
         const chart = new Chart(ctx, {
@@ -156,39 +161,72 @@
         // Update data function
         async function updateData() {
             try {
-                // Simulate data fetch - Replace with actual API call
-                const response = await fetch('/sensor-data');
-                const data = await response.text();
-                
-                // Parse sensor data (example: "pH: 7.00 | Turbidity Voltage: 2.50 V | TDS: 500 ppm")
-                const ph = parseFloat(data.match(/pH: (\d+\.\d{2})/)[1]);
-                const turbidity = parseFloat(data.match(/Turbidity Voltage: (\d+\.\d{2})/)[1]);
-                const tds = parseInt(data.match(/TDS: (\d+)/)[1]);
+                // Ambil data terbaru dari Supabase
+                const response = await fetch(
+                    `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=ph,tds,turbidity,created_at&order=created_at.desc&limit=1`,
+                    {
+                        headers: {
+                            apikey: SUPABASE_API_KEY,
+                            Authorization: `Bearer ${SUPABASE_API_KEY}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                if (!response.ok) {
+                    throw new Error('Supabase fetch failed');
+                }
+                const dataArr = await response.json();
+                if (!dataArr || !dataArr.length) {
+                    document.getElementById('phValue').textContent = '-';
+                    document.getElementById('tdsValue').textContent = '-';
+                    document.getElementById('turbidityValue').textContent = '-';
+                    document.getElementById('phStatus').textContent = 'No Data';
+                    document.getElementById('tdsStatus').textContent = 'No Data';
+                    document.getElementById('turbidityStatus').textContent = 'No Data';
+                    return;
+                }
+                const data = dataArr[0];
+
+                // Ambil nilai sensor
+                const ph = parseFloat(data.ph);
+                const tds = parseInt(data.tds);
+                const turbidity = parseFloat(data.turbidity);
 
                 // Update display values
-                document.getElementById('phValue').textContent = ph.toFixed(2);
-                document.getElementById('tdsValue').textContent = tds;
-                document.getElementById('turbidityValue').textContent = turbidity.toFixed(2);
+                document.getElementById('phValue').textContent = isNaN(ph) ? '-' : ph.toFixed(2);
+                document.getElementById('tdsValue').textContent = isNaN(tds) ? '-' : tds;
+                document.getElementById('turbidityValue').textContent = isNaN(turbidity) ? '-' : turbidity.toFixed(2);
 
                 // Update gauges
-                document.getElementById('phGauge').style.width = `${(ph/14)*100}%`;
-                document.getElementById('tdsGauge').style.width = `${(tds/1000)*100}%`;
-                document.getElementById('turbidityGauge').style.width = `${(turbidity/5)*100}%`;
+                document.getElementById('phGauge').style.width = isNaN(ph) ? '0%' : `${(ph/14)*100}%`;
+                document.getElementById('tdsGauge').style.width = isNaN(tds) ? '0%' : `${(tds/1000)*100}%`;
+                document.getElementById('turbidityGauge').style.width = isNaN(turbidity) ? '0%' : `${(turbidity/5)*100}%`;
 
                 // Update status indicators
-                document.getElementById('phStatus').textContent = getPHStatus(ph);
-                document.getElementById('tdsStatus').textContent = getTDSStatus(tds);
-                document.getElementById('turbidityStatus').textContent = getTurbidityStatus(turbidity);
+                document.getElementById('phStatus').textContent = isNaN(ph) ? 'No Data' : getPHStatus(ph);
+                document.getElementById('tdsStatus').textContent = isNaN(tds) ? 'No Data' : getTDSStatus(tds);
+                document.getElementById('turbidityStatus').textContent = isNaN(turbidity) ? 'No Data' : getTurbidityStatus(turbidity);
 
                 // Update chart
-                const time = new Date().toLocaleTimeString();
+                const time = data.created_at ? new Date(data.created_at).toLocaleTimeString() : new Date().toLocaleTimeString();
                 chart.data.labels.push(time);
                 chart.data.datasets[0].data.push(ph);
                 chart.data.datasets[1].data.push(tds);
                 chart.data.datasets[2].data.push(turbidity);
+
+                // Batasi jumlah data di chart agar tidak berat
+                const maxPoints = 30;
+                if (chart.data.labels.length > maxPoints) {
+                    chart.data.labels.shift();
+                    chart.data.datasets.forEach(ds => ds.data.shift());
+                }
+
                 chart.update();
-                
+
             } catch (error) {
+                document.getElementById('phStatus').textContent = 'Error';
+                document.getElementById('tdsStatus').textContent = 'Error';
+                document.getElementById('turbidityStatus').textContent = 'Error';
                 console.error('Error fetching data:', error);
             }
         }

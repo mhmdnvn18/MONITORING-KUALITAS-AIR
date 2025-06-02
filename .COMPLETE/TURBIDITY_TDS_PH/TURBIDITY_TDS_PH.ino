@@ -1,6 +1,8 @@
 // === Library ===
 #include "DFRobot_PH.h"
 #include <EEPROM.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 // === Konfigurasi Pin ===
 #define TDS_PIN       32    // Ganti pin TDS (jangan pakai yang sama dengan PH!)
@@ -21,6 +23,15 @@ int analogBuffer[SCOUNT];
 int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0;
 
+// === Konfigurasi WiFi ===
+const char* ssid = "iphone";         // Ganti dengan SSID WiFi Anda
+const char* password = "12345678"; // Ganti dengan password WiFi Anda
+
+// === Supabase Config ===
+const char* supabase_url = "https://jaxoedhomiloedbddcuh.supabase.co";
+const char* supabase_api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpheG9lZGhvbWlsb2VkYmRkY3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NTUyODcsImV4cCI6MjA2NDQzMTI4N30.rv1Ie4wfUaRtz-BIV8AYMocObV_ZZbYoR2VbZxShcIo";
+const char* supabase_table = "water_quality"; // Nama tabel di Supabase
+
 void setup() {
   Serial.begin(115200);
   EEPROM.begin(512);   // EEPROM untuk pH sensor
@@ -29,6 +40,15 @@ void setup() {
   pinMode(TDS_PIN, INPUT);
   pinMode(TURBIDITY_PIN, INPUT);
   pinMode(PH_PIN, INPUT);
+
+  // === Koneksi ke WiFi ===
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println(" Connected!");
 }
 
 void loop() {
@@ -67,6 +87,9 @@ void loop() {
     voltagePH = analogPH / 4095.0 * 3300; // Konversi ke mV
     phValue = ph.readPH(voltagePH, temperature);
 
+    // === Kirim data ke Supabase ===
+    sendToSupabase(phValue, tdsValue, turbidityVoltage);
+
     // === Tampilkan Semua Data ===
     Serial.println("=== Data Sensor ===");
 
@@ -102,4 +125,27 @@ int getMedianNum(int bArray[], int iFilterLen) {
   }
 
   return bTab[iFilterLen / 2];
+}
+
+// === Fungsi Kirim Data ke Supabase ===
+void sendToSupabase(float ph, float tds, float turbidity) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    String url = String(supabase_url) + "/rest/v1/" + supabase_table;
+    http.begin(url);
+    http.addHeader("apikey", supabase_api_key);
+    http.addHeader("Authorization", "Bearer " + String(supabase_api_key));
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Prefer", "return=minimal");
+
+    // Format JSON sesuai kolom tabel Supabase Anda
+    String payload = "{\"ph\":" + String(ph, 2) +
+                     ",\"tds\":" + String(tds, 0) +
+                     ",\"turbidity\":" + String(turbidity, 2) + "}";
+
+    int httpResponseCode = http.POST(payload);
+    http.end();
+    Serial.print("Supabase POST: ");
+    Serial.println(httpResponseCode);
+  }
 }
